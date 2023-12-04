@@ -4,8 +4,16 @@ def requirements_from_file(file_name):
  
 setup(
     name = "mlvault", 
-      packages = find_packages(),
-      version="0.0.1",
-      author="MLVault",
-      install_requires=requirements_from_file("requirements.txt"),
-      )
+    packages = find_packages(),
+    version="0.0.1",
+    author="MLVault",
+    install_requires=requirements_from_file("requirements.txt"),
+    entry_points={
+        "console_scripts": [
+            "mlvault = cli:main"
+        ]
+    },
+    classifiers=[
+        'Programming Language :: Python :: 3.10',
+    ]
+)
