@@ -10,7 +10,7 @@ setup(
     install_requires=requirements_from_file("requirements.txt"),
     entry_points={
         "console_scripts": [
-            "mlvault = cli:main"
+            "mlvcli = mlvault.cli:main"
         ]
     },
     classifiers=[
