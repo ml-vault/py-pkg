@@ -6,3 +6,5 @@ test
 .vscode
 config.ini
 .env
+dist
+build

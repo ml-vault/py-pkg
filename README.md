@@ -3,7 +3,7 @@
 How to install 
 
 ```
-pip install git+https://github.com/ml-vault/py-pkg.git
+pip install mlvault
 ```
 
 ## CLI commands
