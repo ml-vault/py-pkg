@@ -276,8 +276,9 @@ class DataPack:
             image = data['image']
             to_save_img_path = f"{subset_dir}/{file_name}"
             to_save_caption_path = f"{subset_dir}/{base_name}{extension}"
-            caption = data['caption']
-            open(to_save_caption_path, 'w').write(caption)
+            caption = (data['caption'] or "").strip()
+            if caption:
+                open(to_save_caption_path, 'w').write(caption)
             nparr = np.array(image)
             Image.fromarray(nparr).save(to_save_img_path)
         print("datasets exported!")
