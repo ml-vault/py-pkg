@@ -1,6 +1,6 @@
 import os
-from .config import get_w_token, get_r_token
 from mlvault.datapack import DataPack, DataPackLoader
+from mlvault.config import get_r_token, get_w_token
 
 def upload_dataset(args:list[str]):
     try:

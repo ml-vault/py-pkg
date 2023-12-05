@@ -1,6 +1,6 @@
 import sys
 from .data import main as data
-from .config import config, set_auth_config
+from mlvault.config import config, set_auth_config
 
 NAMESPACES = ["data", "config"]
 
