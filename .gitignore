@@ -5,3 +5,4 @@ venv*
 test
 .vscode
 config.ini
+.env

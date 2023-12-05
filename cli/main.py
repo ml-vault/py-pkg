@@ -1,6 +1,6 @@
 import sys
 from .data import main as data
-from .config.main import config
+from .config import config, set_auth_config
 
 NAMESPACES = ["data", "config"]
 
@@ -13,5 +13,15 @@ def main():
     if namespace_name == "data":
         data(args)
     elif namespace_name == "config":
-        config()
+        if len(args) == 0:
+            config()
+        else:
+            r_index = args.index("--r")
+            r_value = args[r_index+1]
+            w_index = args.index("--w")
+            w_value = args[w_index+1]
+            if r_value:
+                set_auth_config(r_token=r_value)
+            if w_value:
+                set_auth_config(w_token=w_value)
         pass
