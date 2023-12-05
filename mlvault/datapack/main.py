@@ -106,6 +106,8 @@ class DatasetConfig:
             self.num_repeats = config_input["num_repeats"]
         if "shuffle_caption" in config_input:
             self.shuffle_caption = config_input["shuffle_caption"]
+        if "class_tokens" in config_input:
+            self.class_tokens = config_input["class_tokens"]
         for dataset_key in config_input['subsets']:
             config = { **config_input, **config_input['subsets'][dataset_key]}
             self.subsets[dataset_key] = SubsetConfig(dataset_key, config)
