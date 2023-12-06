@@ -12,6 +12,8 @@ from huggingface_hub.file_download import hf_hub_download
 from tqdm import tqdm
 from datasets.dataset_dict import IterableDatasetDict
 from typing import Any
+from mlvault.api import download_from_hf, download_file_from_hf
+from mlvault.config import get_r_token
 
 def to_optional_dict(d:Any, keys:list[str]):
     output = {}
@@ -175,14 +177,15 @@ class OutputConfig:
         pass 
 
 class TrainConfig:
-    def __init__(self, confing_input:dict) -> None:
-        self.learning_rate = confing_input["learning_rate"]
-        self.train_batch_size = confing_input["train_batch_size"]
-        self.network_dim = confing_input["network_dim"]
-        self.network_alpha = confing_input["network_alpha"]
-        self.max_train_epochs = confing_input["max_train_epochs"]
-        self.base_model = confing_input["base_model"]
-        self.optimizer = confing_input["optimizer"]
+    def __init__(self, config_input:dict) -> None:
+        self.learning_rate = config_input["learning_rate"]
+        self.train_batch_size = config_input["train_batch_size"]
+        self.network_dim = config_input["network_dim"]
+        self.network_alpha = config_input["network_alpha"]
+        self.max_train_epochs = config_input["max_train_epochs"]
+        self.base_model = config_input["base_model"]
+        self.optimizer = config_input["optimizer"]
+        self.continue_from = config_input["continue_from"]
         pass
 
 class SampleConfig:
@@ -246,7 +249,15 @@ class DataPack:
         self.__export_datasets(dataset_dir, r_token)
         self.__write_sample_prompt(base_dir)
         self.__write_toml(base_dir)
+        self.__export_base_models(base_dir)
     
+    def __export_base_models(self, base_dir:str):
+        if self.train.continue_from:
+            user_name, repo_name, model_name = self.train.continue_from.split("/",2)
+            repo_id = f"{user_name}/{repo_name}"
+            download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(base_dir, "continue_from"), r_token=get_r_token())
+        pass
+
     def __write_sample_prompt(self, base_dir:str):
         sample_prompt:list[str] = self.sample.prompts
         sample_prompt_path = f"{base_dir}/sample.txt"
