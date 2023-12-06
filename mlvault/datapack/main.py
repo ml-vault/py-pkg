@@ -185,7 +185,8 @@ class TrainConfig:
         self.max_train_epochs = config_input["max_train_epochs"]
         self.base_model = config_input["base_model"]
         self.optimizer = config_input["optimizer"]
-        self.continue_from = config_input["continue_from"]
+        if "continue_from" in config_input:
+            self.continue_from = config_input["continue_from"]
         pass
 
 class SampleConfig:
@@ -252,7 +253,7 @@ class DataPack:
         self.__export_base_models(base_dir)
     
     def __export_base_models(self, base_dir:str):
-        if self.train.continue_from:
+        if "continue_from" in dir(self.train) and self.train.continue_from:
             user_name, repo_name, model_name = self.train.continue_from.split("/",2)
             repo_id = f"{user_name}/{repo_name}"
             download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(base_dir, "continue_from"), r_token=get_r_token())
