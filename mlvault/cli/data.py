@@ -1,4 +1,5 @@
 import os
+from huggingface_hub import snapshot_download
 from mlvault.datapack import DataPack, DataPackLoader
 from mlvault.config import get_r_token, get_w_token
 
@@ -22,9 +23,14 @@ def download_dataset(args:list[str]):
     repo_id = args[0]
     DataPackLoader.load_datapack_from_hf(repo_id, get_r_token(), os.getcwd()).export_files(".",get_r_token())
 
+def snapshot(repo_id:str):
+    snapshot_download(repo_id, token=get_r_token(), local_dir=os.getcwd())
+
 def main(input_args:list[str]):
     action, *args = input_args
     if action == "up":
         upload_dataset(args)
     elif action == "down":
         download_dataset(args)
+    elif action == "snapshot":
+        snapshot(args[0])

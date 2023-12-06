@@ -10,6 +10,8 @@ class ConfigManaer:
     def __init__(self) -> None:
         self.ini = configparser.ConfigParser()
         self.ini.read(self.config_ini_path, encoding='utf-8')
+        if not self.ini.has_section("AUTH"):
+            self.ini.add_section("AUTH")
         pass
 
     def reset(self):
