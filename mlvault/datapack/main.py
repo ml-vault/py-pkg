@@ -12,7 +12,7 @@ from huggingface_hub.file_download import hf_hub_download
 from tqdm import tqdm
 from datasets.dataset_dict import IterableDatasetDict
 from typing import Any
-from mlvault.api import download_from_hf, download_file_from_hf
+from mlvault.api import download_file_from_hf
 from mlvault.config import get_r_token
 
 def to_optional_dict(d:Any, keys:list[str]):
@@ -37,6 +37,40 @@ def list_dir_in_img(path:str):
     files = os.listdir(path)
     filtered = filter(lambda file: get_ext(file) in imgs, files)
     return list(filtered)   
+
+def check_has_filters(captions:str, filters:list[str], exclude_filters:list[str]=[]):
+    caption_list = list(map(lambda token: token.strip(), captions.split(",")))
+    filter_cnt = 0
+    for e_filter in exclude_filters:
+        if e_filter in caption_list:
+            return False
+    print("continues")
+    for filter in filters:
+        if filter in caption_list:
+            filter_cnt += 1
+    if filter_cnt == len(filters):
+        return True
+    else:
+        return False
+
+def export_data_from_dataset(dataset:IterableDatasetDict, target_dir:str, filters:list[str]=[], exclude_filters:list[str]=[]):
+    filtered = dataset.filter(lambda data: check_has_filters(data['caption'], filters, exclude_filters))
+    for i in tqdm(range(len(filtered))):
+        data = filtered[i]
+        os.makedirs(target_dir, exist_ok=True)
+        file_name = data['file_name']
+        base_name = os.path.splitext(file_name)[0]
+        extension = data['caption_extension']
+        caption = data['caption']
+        image = data['image']
+        to_save_img_path = f"{target_dir}/{file_name}"
+        to_save_caption_path = f"{target_dir}/{base_name}{extension}"
+        caption = (data['caption'] or "").strip()
+        if caption:
+            open(to_save_caption_path, 'w').write(caption)
+        nparr = np.array(image)
+        Image.fromarray(nparr).save(to_save_img_path)
+    print("datasets exported!")
 
 class DataTray:
     imgs: list = []
@@ -70,9 +104,9 @@ class DataTray:
 class SubsetConfig:
 
     def __init__(self, name:str, config_input:dict) -> None:
+        self.name = name
         if "path" in config_input:
             self.path = config_input["path"]
-        self.name = name
         if "class_tokens" in config_input:
             self.class_tokens = config_input["class_tokens"]
         if "is_reg" in config_input:
@@ -257,7 +291,7 @@ class DataPack:
     
     def export_base_models(self, base_dir:str):
         if self.train.continue_from:
-            user_name, repo_name, model_name = self.train.continue_from.split("/",2)
+            user_name, repo_name, model_name = self.train.continue_from.split(":")
             repo_id = f"{user_name}/{repo_name}"
             download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(base_dir, "continue_from"), r_token=get_r_token())
             print("base model downloaded!")
@@ -311,7 +345,7 @@ class DynamicDataPack(DataPack):
     def export_files(self, base_dir:str, r_token:str):
         print("start exporting files!")
         dataset_dir = f"{base_dir}/datasets"
-        self.export_datasets(dataset_dir, r_token)
+        self.export_datasets(f"{dataset_dir}/dynamic/dynamic", r_token)
         self.write_sample_prompt(base_dir)
         self.write_toml(base_dir)
         self.export_base_models(base_dir)
@@ -329,27 +363,10 @@ class DynamicDataPack(DataPack):
         else:
             return False
 
-    def export_datasets(self, dataset_dir:str, r_token:str):
+    def export_datasets(self, target_dir:str, r_token:str,):
         repo_id = self.input.repo_id
         dataset: IterableDatasetDict = load_dataset(repo_id, split="train", token=r_token) # type: ignore
-        filtered = dataset.filter(lambda data: self.check_has_filters(data['caption']))
-        for i in tqdm(range(len(filtered))):
-            data = filtered[i]
-            subset_dir = f"{dataset_dir}/dynamic/dynamic"
-            os.makedirs(subset_dir, exist_ok=True)
-            file_name = data['file_name']
-            base_name = os.path.splitext(file_name)[0]
-            extension = data['caption_extension']
-            caption = data['caption']
-            image = data['image']
-            to_save_img_path = f"{subset_dir}/{file_name}"
-            to_save_caption_path = f"{subset_dir}/{base_name}{extension}"
-            caption = (data['caption'] or "").strip()
-            if caption:
-                open(to_save_caption_path, 'w').write(caption)
-            nparr = np.array(image)
-            Image.fromarray(nparr).save(to_save_img_path)
-        print("datasets exported!")
+        export_data_from_dataset(dataset, target_dir, self.filters)
 
 class DataPackLoader:
     @staticmethod
@@ -362,4 +379,6 @@ class DataPackLoader:
     def load_dynamic_datapack(config: dict, base_dir:str):
         return DynamicDataPack(config, base_dir)
         
-
+class DataExporter(DynamicDataPack):
+    def __init__(self, repo_id:str) -> None:
+        pass

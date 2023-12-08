@@ -29,9 +29,9 @@ def main():
         if len(args) == 0:
             config()
         else:
-            r_index = args.index("--r")
+            r_index = args.index("-r")
             r_value = args[r_index+1]
-            w_index = args.index("--w")
+            w_index = args.index("-w")
             w_value = args[w_index+1]
             if r_value:
                 set_auth_config(r_token=r_value)

@@ -1,6 +1,8 @@
 import json
 import os
 from huggingface_hub import snapshot_download
+from mlvault.cli.data.extract import run_extract
+from mlvault.datapack.main import export_data_from_dataset
 from .down import download_dataset
 from .pack import run_pack
 from mlvault.datapack import DataPack, DataPackLoader
@@ -37,8 +39,4 @@ def main(input_args:list[str]):
     elif action == "pack":
         run_pack(args)
     elif action == "extract":
-        json_path = args[0]
-        file = open(json_path, "r")
-        json_content :dict = json.load(file)
-        dp = DataPackLoader.load_dynamic_datapack(json_content, os.getcwd())
-        dp.export_files(os.getcwd(), get_r_token())
+        run_extract(args)

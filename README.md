@@ -29,7 +29,7 @@ mlvcli config
 In one-line command:
 
 ```
-mlvcli --r {read_token} --w {write_token}
+mlvcli -r {read_token} -w {write_token}
 ```
 
 This saves `config.ini` file in mlvault path.
@@ -52,7 +52,7 @@ mlvcli data down {repo_id}
 
 To pack dynamic datapack
 ```
-mlvcli data pack --d <base_dir> --r <repo_id> [--f <filter_token>]
+mlvcli data pack --d <base_dir> -r <repo_id> [--f <filter_token>]
 ```
 
 To extract 
