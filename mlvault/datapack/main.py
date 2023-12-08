@@ -67,11 +67,11 @@ class DataTray:
     def push_to_hub(self, repo_id:str, w_token:str):
         self.to_dataset().push_to_hub(repo_id, token=w_token, private=True)
 
-
 class SubsetConfig:
 
     def __init__(self, name:str, config_input:dict) -> None:
-        self.path = config_input["path"]
+        if "path" in config_input:
+            self.path = config_input["path"]
         self.name = name
         if "class_tokens" in config_input:
             self.class_tokens = config_input["class_tokens"]
@@ -196,10 +196,14 @@ class SampleConfig:
         pass
 
 class DataPack:
+    @staticmethod
+    def from_yml(config_file_path:str):
+        config =  yaml.load(open(config_file_path, 'r'), Loader=yaml.FullLoader)
+        os.path.dirname(config_file_path)
+        return DataPack(config, os.path.dirname(config_file_path))
 
-    def __init__(self, config_file_path:str):
-        config = yaml.load(open(config_file_path, 'r'), Loader=yaml.FullLoader)
-        self.config_file_path = config_file_path
+    def __init__(self, config:dict, work_dir:str):
+        self.work_dir = work_dir
         self.input = InputConfig(config["input"])
         self.output = OutputConfig(config["output"])
         self.train = TrainConfig(config["train"])
@@ -236,7 +240,7 @@ class DataPack:
         self.to_data_tray().push_to_hub(self.input.repo_id, w_token)
         upload_file(
             repo_id=self.input.repo_id,
-            path_or_fileobj=self.config_file_path,
+            path_or_fileobj=self.work_dir,
             path_in_repo="config.yml",
             token=w_token,
             repo_type="dataset",
@@ -246,12 +250,12 @@ class DataPack:
         print("start exporting files!")
         hf_hub_download(repo_id=self.input.repo_id, filename="config.yml", repo_type="dataset", local_dir=base_dir, token=r_token)
         dataset_dir = f"{base_dir}/datasets"
-        self.__export_datasets(dataset_dir, r_token)
-        self.__write_sample_prompt(base_dir)
-        self.__write_toml(base_dir)
-        self.__export_base_models(base_dir)
+        self.export_datasets(dataset_dir, r_token)
+        self.write_sample_prompt(base_dir)
+        self.write_toml(base_dir)
+        self.export_base_models(base_dir)
     
-    def __export_base_models(self, base_dir:str):
+    def export_base_models(self, base_dir:str):
         if self.train.continue_from:
             user_name, repo_name, model_name = self.train.continue_from.split("/",2)
             repo_id = f"{user_name}/{repo_name}"
@@ -259,20 +263,20 @@ class DataPack:
             print("base model downloaded!")
         pass
 
-    def __write_sample_prompt(self, base_dir:str):
+    def write_sample_prompt(self, base_dir:str):
         sample_prompt:list[str] = self.sample.prompts
         sample_prompt_path = f"{base_dir}/sample.txt"
         open(sample_prompt_path, "w").write("\n".join(sample_prompt))
         print("sample prompt written!")
 
-    def __write_toml(self, base_dir:str):
+    def write_toml(self, base_dir:str):
         toml_dict = self.input.to_toml_dict(join_path(base_dir, "datasets"))
         toml_path = f"{base_dir}/config.toml"
         toml.dump(toml_dict, open(toml_path, "w"))
         self.toml_path = toml_path
         print("toml written!")
     
-    def __export_datasets(self, dataset_dir:str, r_token:str):
+    def export_datasets(self, dataset_dir:str, r_token:str):
         repo_id = self.input.repo_id
         dataset: IterableDatasetDict = load_dataset(repo_id, split="train", token=r_token) # type: ignore
         num_rows:int = len(dataset)
@@ -295,10 +299,67 @@ class DataPack:
             Image.fromarray(nparr).save(to_save_img_path)
         print("datasets exported!")
 
+class DynamicDataPack(DataPack):
+    def __init__(self, config_input:dict, work_dir:str) -> None:
+        config_input["input"] = {**config_input['extends'], **{"datasets":{"dynamic":{"subsets":{"dynamic":{"caption_extension": ".txt"}}}}}}
+        super().__init__(config_input, work_dir)
+        self.extends = config_input["extends"]
+        self.filters = list(filter(lambda v: v, list(map(lambda token: token.strip(), config_input['extends'].get("filters", "").split(",")))) )
+        print(self.filters)
+        pass
+
+    def export_files(self, base_dir:str, r_token:str):
+        print("start exporting files!")
+        dataset_dir = f"{base_dir}/datasets"
+        self.export_datasets(dataset_dir, r_token)
+        self.write_sample_prompt(base_dir)
+        self.write_toml(base_dir)
+        self.export_base_models(base_dir)
+
+    def check_has_filters(self, captions:str):
+        caption_list = list(map(lambda token: token.strip(), captions.split(",")))
+        filter_cnt = 0
+        print(filter_cnt)
+        print(len(self.filters))
+        for filter in self.filters:
+            if filter in caption_list:
+                filter_cnt += 1
+        if filter_cnt == len(self.filters):
+            return True
+        else:
+            return False
+
+    def export_datasets(self, dataset_dir:str, r_token:str):
+        repo_id = self.input.repo_id
+        dataset: IterableDatasetDict = load_dataset(repo_id, split="train", token=r_token) # type: ignore
+        filtered = dataset.filter(lambda data: self.check_has_filters(data['caption']))
+        for i in tqdm(range(len(filtered))):
+            data = filtered[i]
+            subset_dir = f"{dataset_dir}/dynamic/dynamic"
+            os.makedirs(subset_dir, exist_ok=True)
+            file_name = data['file_name']
+            base_name = os.path.splitext(file_name)[0]
+            extension = data['caption_extension']
+            caption = data['caption']
+            image = data['image']
+            to_save_img_path = f"{subset_dir}/{file_name}"
+            to_save_caption_path = f"{subset_dir}/{base_name}{extension}"
+            caption = (data['caption'] or "").strip()
+            if caption:
+                open(to_save_caption_path, 'w').write(caption)
+            nparr = np.array(image)
+            Image.fromarray(nparr).save(to_save_img_path)
+        print("datasets exported!")
+
 class DataPackLoader:
     @staticmethod
     def load_datapack_from_hf(repo_id:str, r_token:str, base_dir:str) -> DataPack:
         hf_hub_download(repo_id=repo_id, filename="config.yml", repo_type="dataset", local_dir=base_dir, token=r_token)
         config_file_path = f"{base_dir}/config.yml"
-        return DataPack(config_file_path)
+        return DataPack.from_yml(config_file_path)
+
+    @staticmethod
+    def load_dynamic_datapack(config: dict, base_dir:str):
+        return DynamicDataPack(config, base_dir)
+        
 

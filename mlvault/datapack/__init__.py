@@ -1,2 +1,2 @@
-from .main import DataPack, DataPackLoader
-__all__ = ["DataPack", "DataPackLoader"]
+from .main import DataPack, DataPackLoader, DataTray
+__all__ = ["DataPack", "DataPackLoader", "DataTray"]

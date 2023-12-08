@@ -49,3 +49,10 @@ And if you want to export from dataset repo:
 ```
 mlvcli data down {repo_id}
 ```
+
+To pack dynamic datapack
+```
+mlvcli data pack --d <base_dir> --r <repo_id> [--f <filter_token>]
+```
+
+To extract 

@@ -1,5 +1,8 @@
+import json
 import os
 from huggingface_hub import snapshot_download
+from .down import download_dataset
+from .pack import run_pack
 from mlvault.datapack import DataPack, DataPackLoader
 from mlvault.config import get_r_token, get_w_token
 
@@ -14,14 +17,11 @@ def upload_dataset(args:list[str]):
             print("File does not exist")
             exit(1)
         else:
-            DataPack(file_path).push_to_hub(get_w_token())
+            DataPack.from_yml(file_path).push_to_hub(get_w_token())
     except ValueError:
         print("Please provide a file name")
         exit(1)
 
-def download_dataset(args:list[str]):
-    repo_id = args[0]
-    DataPackLoader.load_datapack_from_hf(repo_id, get_r_token(), os.getcwd()).export_files(".",get_r_token())
 
 def snapshot(repo_id:str):
     snapshot_download(repo_id, token=get_r_token(), local_dir=os.getcwd())
@@ -34,3 +34,11 @@ def main(input_args:list[str]):
         download_dataset(args)
     elif action == "snapshot":
         snapshot(args[0])
+    elif action == "pack":
+        run_pack(args)
+    elif action == "extract":
+        json_path = args[0]
+        file = open(json_path, "r")
+        json_content :dict = json.load(file)
+        dp = DataPackLoader.load_dynamic_datapack(json_content, os.getcwd())
+        dp.export_files(os.getcwd(), get_r_token())
