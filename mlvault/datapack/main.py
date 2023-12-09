@@ -282,21 +282,28 @@ class DataPack:
         )
     
     def export_files(self, base_dir:str, r_token:str):
-        print("start exporting files!")
-        hf_hub_download(repo_id=self.input.repo_id, filename="config.yml", repo_type="dataset", local_dir=base_dir, token=r_token)
-        dataset_dir = f"{base_dir}/datasets"
-        self.export_datasets(dataset_dir, r_token)
-        self.write_sample_prompt(base_dir)
-        self.write_toml(base_dir)
-        self.export_base_models(base_dir)
+        try:
+            print("start exporting files!")
+            hf_hub_download(repo_id=self.input.repo_id, filename="config.yml", repo_type="dataset", local_dir=base_dir, token=r_token)
+            dataset_dir = f"{base_dir}/datasets"
+            self.export_datasets(dataset_dir, r_token)
+            self.write_sample_prompt(base_dir)
+            self.write_toml(base_dir)
+            self.export_base_models(base_dir)
+        except:
+            print("can not export files!")
+            raise
     
     def export_base_models(self, base_dir:str):
-        if self.train.continue_from:
-            user_name, repo_name, model_name = self.train.continue_from.split(":")
-            repo_id = f"{user_name}/{repo_name}"
-            download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(base_dir, "continue_from"), r_token=get_r_token())
-            print("base model downloaded!")
-        pass
+        try:
+            if self.train.continue_from:
+                repo_id, model_name = self.train.continue_from.split(":")
+                download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(base_dir, "continue_from"), r_token=get_r_token())
+                print("base model downloaded!")
+            pass
+        except:
+            print("base model not found!")
+            raise
 
     def write_sample_prompt(self, base_dir:str):
         sample_prompt:list[str] = self.sample.prompts
@@ -340,7 +347,6 @@ class DynamicDataPack(DataPack):
         super().__init__(config_input, work_dir)
         self.extends = config_input["extends"]
         self.filters = list(filter(lambda v: v, list(map(lambda token: token.strip(), config_input['extends'].get("filters", "").split(",")))) )
-        print(self.filters)
         pass
 
     def export_files(self, base_dir:str, r_token:str):
@@ -350,19 +356,6 @@ class DynamicDataPack(DataPack):
         self.write_sample_prompt(base_dir)
         self.write_toml(base_dir)
         self.export_base_models(base_dir)
-
-    def check_has_filters(self, captions:str):
-        caption_list = list(map(lambda token: token.strip(), captions.split(",")))
-        filter_cnt = 0
-        print(filter_cnt)
-        print(len(self.filters))
-        for filter in self.filters:
-            if filter in caption_list:
-                filter_cnt += 1
-        if filter_cnt == len(self.filters):
-            return True
-        else:
-            return False
 
     def export_datasets(self, target_dir:str, r_token:str,):
         repo_id = self.input.repo_id
