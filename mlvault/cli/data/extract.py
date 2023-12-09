@@ -1,8 +1,8 @@
 import os
 import re
 from mlvault.config import get_r_token
-from mlvault.datapack.main import DataTray, export_data_from_dataset
-from mlvault.util import find_args, is_image
+from mlvault.datapack.main import DataTray, export_datataset_by_filters
+from mlvault.util import find_args, is_image, load_dataset_for_dpack
 from PIL import Image
 from datasets.dataset_dict import IterableDatasetDict
 from datasets import load_dataset
@@ -31,5 +31,5 @@ def run_extract(args:list[str]):
         print_help()
         exit(1)
     else:
-        dataset: IterableDatasetDict = load_dataset(repo_name, split="train", token=get_r_token()) # type: ignore
-        export_data_from_dataset(dataset, dest_dir, filters=filters, exclude_filters=exclude_filters)
+        dataset = load_dataset_for_dpack(repo_name)
+        export_datataset_by_filters(dataset, dest_dir, filters=filters, exclude_filters=exclude_filters)

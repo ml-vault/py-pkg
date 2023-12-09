@@ -1,0 +1,61 @@
+version: 1.0
+
+input:
+  repo_id: your_name/repo_name
+  resolution: 1024
+  datasets: 
+    # name of dataset
+    classified:
+      caption_extension: .none
+      subsets:
+        # name of subset
+        boys:
+          path: /path_to_images
+          class_tokens: boy, person
+        girls:
+          path: /path_to_images
+          class_tokens: girl, person
+    tagged:
+      caption_extension: .txt
+      subsets:
+        dogs:
+          path: /path_to_images
+        cows:
+          path: /path_to_images
+    captioned:
+      caption_extension: .caption
+      subsets:
+        frogs:
+          path: /path_to_images
+        cats:
+          path: /path_to_images
+    dynamic_dataset:
+      subsets:
+        # It resolves when export files
+        :repo_user/repo_name:my_dynamic_subset:
+          # filter condition works in AND rule, optional
+          filters: boy, smile, illustration
+          # exclude condition works in OR rule, optional
+          exclude: girl, realistic, crying, close-up
+
+train:
+  base_model: SDXL
+  learning_rate: 0.000005
+  train_batch_size: 10
+  network_dim: 16
+  network_alpha: 16
+  max_train_epochs: 200
+  optimizer: AdamW8bit
+  continue_from: repo_id:model_file_path
+
+output:
+  model_name: my_first_model
+  save_every_n_epochs: 5
+  save_model_as: safetensors
+
+sample:
+  sample_every_n_epochs: 5
+  sampler: euler_a
+  prompts:
+    - a boy jumping --n low quality, worst quality --H 1024 --W 1024
+    - a girl jumping --n worst quality, realistic --H 1024 --W 1024
