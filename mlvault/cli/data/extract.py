@@ -21,7 +21,6 @@ def run_extract(args:list[str]):
     filters = list(map(lambda token: token.strip(), tokens_raw.split(","))) if tokens_raw else []
     exclude_filters = find_args(args, "-e")
     exclude_filters = list(map(lambda token: token.strip(), exclude_filters.split(","))) if exclude_filters else []
-    print(exclude_filters)
     if dest_dir:
         dest_dir = dest_dir if dest_dir.startswith("/") else os.path.join(os.getcwd(), dest_dir)
     else :

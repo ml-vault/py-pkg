@@ -44,7 +44,6 @@ def check_has_filters(captions:str, filters:list[str], exclude_filters:list[str]
     for e_filter in exclude_filters:
         if e_filter in caption_list:
             return False
-    print("continues")
     for filter in filters:
         if filter in caption_list:
             filter_cnt += 1
@@ -55,7 +54,9 @@ def check_has_filters(captions:str, filters:list[str], exclude_filters:list[str]
 
 def export_data_from_dataset(dataset:IterableDatasetDict, target_dir:str, filters:list[str]=[], exclude_filters:list[str]=[]):
     filtered = dataset.filter(lambda data: check_has_filters(data['caption'], filters, exclude_filters))
-    for i in tqdm(range(len(filtered))):
+    data_len = len(filtered)
+    print(f"exporting {data_len} files")
+    for i in tqdm(range(data_len)):
         data = filtered[i]
         os.makedirs(target_dir, exist_ok=True)
         file_name = data['file_name']
