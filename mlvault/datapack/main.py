@@ -157,13 +157,15 @@ class SubsetConfig:
     def to_toml_dict(self, dataset_dir:str):
         toml_dict = to_optional_dict(self, ["caption_extension", "keep_tokens", "num_repeats", "shuffle_caption", "class_tokens", "is_reg"])
         toml_dict["image_dir"] = join_path(dataset_dir, self.name)
+        if self.dynamic_repo_id:
+            toml_dict["caption_extension"] = ".txt"
         return toml_dict
 
-    def expost_dset_files(self,  default_dataset: Dataset):
+    def expost_dset_files(self,  default_dataset: Dataset | None):
         if self.dynamic_repo_id:
             ds = load_dataset_for_dpack(self.dynamic_repo_id)
             export_datataset_by_filters(ds, self.work_dir, self.filters, self.exclude_filters)
-        else:
+        elif default_dataset:
             subset_div = self.work_dir.split("/")[-2:]
             export_dataset_by_divider(default_dataset, self.work_dir, "/".join(subset_div))
 
@@ -207,7 +209,7 @@ class DatasetConfig:
             toml_dict["subsets"].append(self.subsets[subset_key].to_toml_dict(join_path(dataset_dir, self.name)))
         return toml_dict
     
-    def export_dset_files(self,  default_dataset: Dataset):
+    def export_dset_files(self,  default_dataset: Dataset | None):
         for subset_key in self.subsets:
             self.subsets[subset_key].expost_dset_files(default_dataset)
 
@@ -216,7 +218,7 @@ class InputConfig:
     datasets: dict[str, DatasetConfig] = {}
 
     def __init__(self, config_input:dict, work_dir:str) -> None:
-        self.dataset_repo = config_input["dataset_repo"]
+        self.dataset_repo = config_input.get("dataset_repo")
         self.work_dir = work_dir
         if "resolution" in config_input:
             self.resolution = config_input["resolution"]
@@ -248,7 +250,7 @@ class InputConfig:
             toml_dict["datasets"].append(self.datasets[dataset_key].to_toml_dict(datasets_dir))
         return toml_dict
     
-    def export_dset_files(self, default_dataset: Dataset):
+    def export_dset_files(self, default_dataset: Dataset | None):
         for dataset_key in self.datasets:
             self.datasets[dataset_key].export_dset_files(default_dataset)
 
@@ -328,26 +330,27 @@ class DataPack:
         return data_tray
     
     def push_to_hub(self, w_token:str):
-        try:
-            print("Start pushing to hub!")
-            self.to_data_tray().push_to_hub(self.input.dataset_repo, w_token)
-            config_file = f"{self.work_dir}/config.yml"
-            upload_file(
-                repo_id=self.input.dataset_repo,
-                path_or_fileobj=config_file,
-                path_in_repo="config.yml",
-                token=w_token,
-                repo_type="dataset",
-            )
-        except:
-            print("Can not push to hub!")
-            raise
+        if self.input.dataset_repo:    
+            try:
+                print("Start pushing to hub!")
+                self.to_data_tray().push_to_hub(self.input.dataset_repo, w_token)
+                config_file = f"{self.work_dir}/config.yml"
+                upload_file(
+                    repo_id=self.input.dataset_repo,
+                    path_or_fileobj=config_file,
+                    path_in_repo="config.yml",
+                    token=w_token,
+                    repo_type="dataset",
+                )
+            except:
+                print("Can not push to hub!")
+                raise
     
     def export_files(self):
         try:
             print("Start exporting files!")
-            hf_hub_download(repo_id=self.input.dataset_repo, filename="config.yml", repo_type="dataset", local_dir=self.work_dir, token=get_r_token())
-            dataset_dir = f"{self.work_dir}/datasets"
+            if self.input.dataset_repo:
+                hf_hub_download(repo_id=self.input.dataset_repo, filename="config.yml", repo_type="dataset", local_dir=self.work_dir, token=get_r_token())
             self.export_datasets()
             self.write_sample_prompt(self.work_dir)
             self.write_toml(self.work_dir)
@@ -382,30 +385,9 @@ class DataPack:
     
     def export_datasets(self):
         repo_id = self.input.dataset_repo
-        dataset = load_dataset_for_dpack(repo_id)
+        dataset = load_dataset_for_dpack(repo_id) if repo_id else None
         self.input.export_dset_files(dataset)
         print("datasets exported!")
-
-class DynamicDataPack(DataPack):
-    def __init__(self, config_input:dict, work_dir:str) -> None:
-        config_input["input"] = {**config_input['extends'], **{"datasets":{"dynamic":{"subsets":{"dynamic":{"caption_extension": ".txt"}}}}}}
-        super().__init__(config_input, work_dir)
-        self.extends = config_input["extends"]
-        self.filters = list(filter(lambda v: v, list(map(lambda token: token.strip(), config_input['extends'].get("filters", "").split(",")))) )
-        pass
-
-    def export_files(self, base_dir:str, r_token:str):
-        print("start exporting files!")
-        dataset_dir = f"{base_dir}/datasets"
-        self.export_datasets(f"{dataset_dir}/dynamic/dynamic", r_token)
-        self.write_sample_prompt(base_dir)
-        self.write_toml(base_dir)
-        self.export_base_models()
-
-    def export_datasets(self, target_dir:str, r_token:str,):
-        repo_id = self.input.dataset_repo
-        dataset = load_dataset_for_dpack(repo_id)
-        export_datataset_by_filters(dataset, target_dir, self.filters)
 
 class DataPackLoader:
     @staticmethod
@@ -413,8 +395,3 @@ class DataPackLoader:
         hf_hub_download(repo_id=repo_id, filename="config.yml", repo_type="dataset", local_dir=base_dir, token=get_r_token())
         config_file_path = f"{base_dir}/config.yml"
         return DataPack.from_yml(config_file_path)
-
-    @staticmethod
-    def load_dynamic_datapack(config: dict, base_dir:str):
-        return DynamicDataPack(config, base_dir)
-        
