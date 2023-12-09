@@ -6,7 +6,6 @@ from .down import download_dataset
 from .pack import run_pack
 from mlvault.datapack import DataPack, DataPackLoader
 from mlvault.config import get_r_token, get_w_token
-hfs = HfFileSystem(token=get_r_token())
 
 def upload_dataset(args:list[str]):
     try:
@@ -30,6 +29,7 @@ def snapshot(repo_id:str):
     snapshot_download(repo_id, token=get_r_token(), local_dir=os.getcwd())
 
 def models(repo_id:str):
+    hfs = HfFileSystem(token=get_r_token())
     res_list= hfs.glob(f'{repo_id}/**.safetensors')
     print(f"Found {len(res_list)} models")
     if len(res_list) == 0:

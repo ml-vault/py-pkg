@@ -28,10 +28,14 @@ class ConfigManaer:
             self.set_w_token(w_token)
 
     def set_r_token(self, r_token:str):
+        if not self.ini.has_section("AUTH"):
+            self.ini.add_section("AUTH")
         self.ini.set('AUTH', 'r_token', r_token)
         self.save()
 
     def set_w_token(self, w_token:str):
+        if not self.ini.has_section("AUTH"):
+            self.ini.add_section("AUTH")
         self.ini.set('AUTH', 'w_token', w_token)
         self.save()
     
