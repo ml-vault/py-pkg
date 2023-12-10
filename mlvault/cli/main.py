@@ -1,8 +1,11 @@
+from os import wait
+import subprocess
 import sys
+from urllib import request
 from .data import main as data
 from mlvault.config import config, set_auth_config
 
-NAMESPACES = ["data", "config"]
+NAMESPACES = ["data", "config", "get"]
 
 def exit_with_help(msg=""):
     if msg:

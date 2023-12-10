@@ -12,7 +12,7 @@ from tqdm import tqdm
 from typing import Any
 from mlvault.api import download_file_from_hf
 from mlvault.config import get_r_token
-from mlvault.util import load_dataset_for_dpack
+from mlvault.util import load_dataset_for_dpack, parse_str_to_list
 
 def to_optional_dict(d:Any, keys:list[str]):
     output = {}
@@ -24,15 +24,6 @@ def to_optional_dict(d:Any, keys:list[str]):
 
 def get_ext(file_name: str):
     return os.path.splitext(file_name)[1].lower()
-
-def parse_str_to_list(str_input:str | None) -> list[str]:
-    if not str_input:
-        return []
-    else:
-        splitted = map(lambda token: token.strip(), str_input.split(","))
-        filtered = filter(lambda token: token, splitted)
-        return list(filtered)
-
 
 imgs = ['.png', '.jpg', '.jpeg', '.bmp', '.webp']
 

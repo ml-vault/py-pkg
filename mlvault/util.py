@@ -20,3 +20,11 @@ def load_dataset_for_dpack(repo_id:str):
     else :
         raise Exception("Invalid dataset")
 
+
+def parse_str_to_list(str_input:str | None) -> list[str]:
+    if not str_input:
+        return []
+    else:
+        splitted = map(lambda token: token.strip(), str_input.split(","))
+        filtered = filter(lambda token: token, splitted)
+        return list(filtered)
