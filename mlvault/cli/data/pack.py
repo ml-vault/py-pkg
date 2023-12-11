@@ -70,12 +70,12 @@ def pack(base_dir:str, token_filter:list[str], repo_name:str):
 def print_help():
     print("Usage: mlvcli pack <options>")
     print("Options:")
-    print("  -d <base directory>")
+    print("  -b <base directory>")
     print("  -f <class filter> : quotes are required, comma separated")
     print("  -r <repo name>")
 
 def run_pack(args:list[str]):
-    base_dir = find_args(args, "-d")
+    base_dir = find_args(args, "-b")
     tokens_raw = find_args(args, "-f")
     repo_name = find_args(args, "-r")
     token_filter = list(map(lambda token: token.strip(), tokens_raw.split(","))) if tokens_raw else []
