@@ -1,8 +1,8 @@
 import os
 from huggingface_hub import snapshot_download, HfFileSystem
-from mlvault.cli.data.search  import run_search, search
+from mlvault.cli.data.prepare import run_prepare
+from mlvault.cli.data.search  import run_search
 from mlvault.cli.data.extract import run_extract
-from mlvault.datapack.main import export_datataset_by_filters
 from .down import download_dataset
 from .pack import run_pack
 from mlvault.datapack import DataPack, DataPackLoader
@@ -59,5 +59,7 @@ def main(input_args:list[str]):
         run_pack(args)
     elif action == "search":
         run_search(args)
+    elif action == "prepare":
+        run_prepare(args)
     elif action == "extract":
         run_extract(args)

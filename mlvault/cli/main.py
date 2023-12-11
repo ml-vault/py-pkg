@@ -1,4 +1,5 @@
 from os import wait
+import os
 import subprocess
 import sys
 from urllib import request
@@ -28,14 +29,25 @@ def main():
         exit(1)
     if namespace_name == "data":
         data(args)
+    elif namespace_name == "config-env":
+        if len(args) == 0:
+            config()
+        else:
+            r_token = os.getenv("HUGGING_FACE_READ_TOKEN")
+            w_token = os.getenv("HUUGING_FACE_WRITE_TOKEN")
+            if r_token:
+                set_auth_config(r_token=r_token)
+            if w_token:
+                set_auth_config(w_token=w_token)
+        pass
     elif namespace_name == "config":
         if len(args) == 0:
             config()
         else:
-            r_index = args.index("-r")
-            r_value = args[r_index+1]
-            w_index = args.index("-w")
-            w_value = args[w_index+1]
+            r_token = args.index("-r")
+            r_value = args[r_token+1]
+            w_token = args.index("-w")
+            w_value = args[w_token+1]
             if r_value:
                 set_auth_config(r_token=r_value)
             if w_value:

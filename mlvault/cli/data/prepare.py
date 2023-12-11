@@ -1,11 +1,12 @@
 import os
 import re
+import shutil
 from mlvault.datapack.main import DataTray, export_datataset_by_filters
 from mlvault.util import find_args, has_args, is_image, parse_str_to_list, resolve_relative_path
 from PIL import Image
 
 
-def search(base_dir:str, token_filter:list[str]):
+def prepare(base_dir:str, target_dir:str):
     cucrrent = os.getcwd()
     image_info_dict = {}
     class_dir_images_dict = {}
@@ -25,6 +26,7 @@ def search(base_dir:str, token_filter:list[str]):
 
     current_list = os.listdir(cucrrent)
     class_dirs = filter(lambda name: re.match(r'\[.*\].*',name) , current_list )
+    task_list = dict = {}
     for class_dir in class_dirs:
         class_name = re.sub(r'\[.*\]', '', class_dir).replace("_", " ").strip()
         class_dir_images_dict[class_name] = []
@@ -32,7 +34,10 @@ def search(base_dir:str, token_filter:list[str]):
         class_dir_images_dict[class_name] = class_images
         for image_name in class_images:
             if image_name not in image_info_dict:
-                print(f"Image {image_name} from {class_name} not found in base directory")
+                img_path = os.path.join(cucrrent, class_dir, image_name)
+                target_path = os.path.join(target_dir, image_name)
+                task_list[target_path] = img_path
+                print(f"Image {image_name} from [{class_name}] not found in base directory")
             else :
                 image_record = image_info_dict[image_name]
                 def remove_and_reinsert():
@@ -40,23 +45,11 @@ def search(base_dir:str, token_filter:list[str]):
                 if class_name in image_record['captions']:
                     remove_and_reinsert()
                 image_record['captions'].insert(0, class_name)
-    data_tray = DataTray()
-    for image_name in image_info_dict:
-        image_record = image_info_dict[image_name]
-        image = Image.open(image_record['path'])
-        filter_len = len(token_filter)
-        if filter_len:
-            filter_matched = 0
-            for toekn_filter in token_filter:
-                if toekn_filter in image_record['captions']:
-                    filter_matched += 1
-            if filter_matched != filter_len:
-                continue
-        captions = ", ".join(image_record['captions'])
-        data_tray.add("generated/generated", image_name, image, captions, ".txt")
-    dataset = data_tray.to_dataset()
-    return dataset
-
+    print(f"Found {len(task_list)} images to prepare")
+    for target_path in task_list:
+        img_path = task_list[target_path]
+        shutil.copyfile(img_path, target_path)
+        print(f"Copied {img_path}\n -> {target_path}")
 
 
 def print_help():
@@ -66,21 +59,14 @@ def print_help():
     print("  -f <class filter> : quotes are required, comma separated")
     print("  -e <to exclude class filter> : quotes are required, comma separated")
 
-def run_search(args:list[str]):
+def run_prepare(args:list[str]):
     base_dir = find_args(args, "-b")
     if base_dir:
         base_dir = resolve_relative_path(base_dir)
-    print(base_dir)
-    dest_dir = find_args(args, "-d")
+    dest_dir = find_args(args, "-d") or "__need_caption_and_image_in_base_dir"
     if dest_dir:
         dest_dir = resolve_relative_path(dest_dir)
-    count = has_args(args, "-c", "--count")
-    token_filter = parse_str_to_list(find_args(args, "-f"))
-    exclude_filter = parse_str_to_list(find_args(args, "-e"))
-    if not token_filter or not exclude_filter:
-        print("Please provide a filter")
-        print_help()
-        exit(1)
+
     if not base_dir:
         print("Please provide a base directory")
         print_help()
@@ -89,9 +75,10 @@ def run_search(args:list[str]):
         print("Base directory does not exist")
         print_help()
         exit(1)
-    elif not dest_dir and count:
-        dset = search(base_dir, token_filter)
-        export_datataset_by_filters(dset, target_dir=None, filters=token_filter, exclude_filters=exclude_filter)
+    if not dest_dir:
+        print("Please provide a base directory")
+        print_help()
+        exit(1)
     else:
-        dset = search(base_dir, token_filter)
-        export_datataset_by_filters(dset, dest_dir, filters=token_filter, exclude_filters=exclude_filter)
+        os.makedirs(dest_dir, exist_ok=True)
+        prepare(base_dir, dest_dir)

@@ -66,13 +66,17 @@ def export_dataset_rows(dataset:Dataset, target_dir:str):
         Image.fromarray(nparr).save(to_save_img_path)
     
 
-def export_datataset_by_filters(dataset:Dataset, target_dir:str, filters:list[str]=[], exclude_filters:list[str]=[]):
+def export_datataset_by_filters(dataset:Dataset, target_dir:str|None, filters:list[str]=[], exclude_filters:list[str]=[]):
     print(f"exporting by filters {filters}")
     filtered = dataset.filter(lambda data: check_has_filters(data['caption'], filters, exclude_filters))
     data_len = len(filtered)
-    print(f"exporting {data_len} files")
-    export_dataset_rows(filtered, target_dir)
-    print("Datasets exported!")
+    if target_dir:
+        print(f"exporting {data_len} files")
+        export_dataset_rows(filtered, target_dir)
+        print("Datasets exported!")
+    else:
+        print(f"Dataset has {data_len} files")
+        return filtered
 
 def export_dataset_by_divider(dataset:Dataset, target_dir:str, divider:str):
     print(f"exporting by divider {divider}")
