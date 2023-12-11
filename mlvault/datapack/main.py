@@ -360,6 +360,11 @@ class DataPack:
                 repo_id, model_name = self.train.continue_from.split(":")
                 download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(self.work_dir, "continue_from"), r_token=get_r_token())
                 print("Base model downloaded!")
+            if ":" in self.train.base_model:
+                repo_id, model_name = self.train.base_model.split(":")
+                download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(self.work_dir, "continue_from"), r_token=get_r_token())
+                self.train.base_model = f"{self.work_dir}/continue_from/{model_name}"
+                print("Base model downloaded!")
             pass
         except:
             print("Base model not found!")
