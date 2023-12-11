@@ -23,6 +23,7 @@ def pack(base_dir:str, token_filter:list[str], repo_name:str):
         if is_file_exist:
             with open(caption_file_path, "r") as f:
                 image_info_dict[image_name]["captions"] = list(map(lambda token: token.strip() ,f.readline().replace("_", " ").replace('1girl', 'girl').replace('1boy', 'boy').split(", ")))
+                f.close()
 
     current_list = os.listdir(cucrrent)
     class_dirs = filter(lambda name: re.match(r'\[.*\].*',name) , current_list )
@@ -45,6 +46,7 @@ def pack(base_dir:str, token_filter:list[str], repo_name:str):
     for image_name in image_info_dict:
         image_record = image_info_dict[image_name]
         image = Image.open(image_record['path'])
+        image.close()
         filter_len = len(token_filter)
         if filter_len:
             filter_matched = 0
