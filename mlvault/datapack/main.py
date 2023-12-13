@@ -254,25 +254,17 @@ class OutputConfig:
 
     def __init__(self, config_input:dict) -> None:
         self.model_name = config_input["model_name"]
-        self.save_every_n_epochs = config_input["save_every_n_epochs"]
         self.save_model_as = config_input["save_model_as"]
         pass 
 
 class TrainConfig:
     def __init__(self, config_input:dict) -> None:
-        self.learning_rate = config_input["learning_rate"]
-        self.train_batch_size = config_input["train_batch_size"]
-        self.network_dim = config_input["network_dim"]
-        self.network_alpha = config_input["network_alpha"]
-        self.max_train_epochs = config_input["max_train_epochs"]
-        self.base_model = config_input["base_model"]
-        self.optimizer = config_input["optimizer"]
+        self.base_model = config_input.get("base_model", None)
         self.continue_from = config_input.get("continue_from", None)
         pass
 
 class SampleConfig:
     def __init__(self, config_input) -> None:
-        self.sample_every_n_epochs = config_input["sample_every_n_epochs"]
         self.prompts = config_input["prompts"]
         self.sampler = config_input["sampler"]
         pass
