@@ -341,25 +341,8 @@ class DataPack:
             self.export_datasets()
             self.write_sample_prompt(self.work_dir)
             self.write_toml(self.work_dir)
-            self.export_base_models()
         except:
             print("Can not export files!")
-            raise
-    
-    def export_base_models(self):
-        try:
-            if self.train.continue_from:
-                repo_id, model_name = self.train.continue_from.split(":")
-                download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(self.work_dir, "continue_from"), r_token=get_r_token())
-                print("Base model downloaded!")
-            if ":" in self.train.base_model:
-                repo_id, model_name = self.train.base_model.split(":")
-                download_file_from_hf(repo_id=repo_id, file_name=model_name, local_dir=join_path(self.work_dir, "continue_from"), r_token=get_r_token())
-                self.train.base_model = f"{self.work_dir}/continue_from/{model_name}"
-                print("Base model downloaded!")
-            pass
-        except:
-            print("Base model not found!")
             raise
 
     def write_sample_prompt(self, base_dir:str):
