@@ -5,7 +5,7 @@ def requirements_from_file(file_name):
 setup(
     name = "mlvault", 
     packages = find_packages(),
-    version="0.0.20",
+    version="0.0.21",
     author="MLVault",
     install_requires=requirements_from_file("requirements.txt"),
     entry_points={
