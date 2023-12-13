@@ -1,10 +1,10 @@
-from os import wait
 import os
-import subprocess
 import sys
-from urllib import request
+
+from mlvault.api.download import download_file_from_hf
+from mlvault.util import resolve_relative_path
 from .data import main as data
-from mlvault.config import config, set_auth_config
+from mlvault.config import config, get_r_token, set_auth_config
 
 NAMESPACES = ["data", "config", "get"]
 
@@ -53,3 +53,7 @@ def main():
             if w_value:
                 set_auth_config(w_token=w_value)
         pass
+    elif namespace_name == "file":
+        repo_id, filename = args[0].split(":")
+        target = args[1] if len(args) > 1 else os.getcwd()
+        download_file_from_hf(repo_id=repo_id, file_name=filename, local_dir=resolve_relative_path(target), r_token=get_r_token())
