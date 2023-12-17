@@ -46,7 +46,7 @@ def check_has_filters(captions:str, filters:list[str], exclude_filters:list[str]
     else:
         return False
 
-def export_dataset_rows(dataset:Dataset, target_dir:str):
+def export_dataset_rows(dataset:Dataset, target_dir:str, filters:list[str]=[]):
     data_len = len(dataset)
     print(f"exporting {data_len} files")
     for i in tqdm(range(data_len)):
@@ -61,7 +61,10 @@ def export_dataset_rows(dataset:Dataset, target_dir:str):
         to_save_caption_path = f"{target_dir}/{base_name}{extension}"
         caption = (data['caption'] or "").strip()
         if caption:
-            open(to_save_caption_path, 'w').write(caption)
+            captions = list(map(lambda token: token.strip(), caption.split(",")))
+            filtered_captions = list(filter(lambda token: token not in filters, captions))
+            primary_captions = ", ".join([*filters, *filtered_captions])
+            open(to_save_caption_path, 'w').write(primary_captions)
         nparr = np.array(image)
         Image.fromarray(nparr).save(to_save_img_path)
     
@@ -72,7 +75,7 @@ def export_datataset_by_filters(dataset:Dataset, target_dir:str|None, filters:li
     data_len = len(filtered)
     if target_dir:
         print(f"exporting {data_len} files")
-        export_dataset_rows(filtered, target_dir)
+        export_dataset_rows(filtered, target_dir, filters)
         print("Datasets exported!")
     else:
         print(f"Dataset has {data_len} files")

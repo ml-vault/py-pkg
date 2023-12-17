@@ -6,7 +6,7 @@ from mlvault.util import resolve_relative_path
 from .data import main as data
 from mlvault.config import config, get_r_token, set_auth_config
 
-NAMESPACES = ["data", "config", "get"]
+NAMESPACES = ["data", "config", "get", 'file']
 
 def exit_with_help(msg=""):
     if msg:
