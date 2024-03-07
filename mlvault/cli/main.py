@@ -2,7 +2,7 @@ import os
 import sys
 
 from mlvault.api.download import download_file_from_hf
-from mlvault.util import resolve_relative_path
+from mlvault.util import resolve_relative_path,has_args
 from .data import main as data
 from mlvault.config import config, get_r_token, set_auth_config
 
@@ -41,7 +41,17 @@ def main():
                 set_auth_config(w_token=w_token)
         pass
     elif namespace_name == "config":
-        if len(args) == 0:
+        read_from_env = has_args(args,"-e")
+        if read_from_env:
+            rtoken = os.environ.get("HUGGING_FACE_READ_TOKEN")
+            wtoken = os.environ.get("HUGGING_FACE_WRITE_TOKEN")
+            if not rtoken or not wtoken:
+                print("No tokens found in environment")
+                exit(1)
+            else:
+                set_auth_config(r_token=rtoken, w_token=wtoken)
+                print("set tokens from environment variables")
+        elif len(args) == 0:
             config()
         else:
             r_token = args.index("-r")

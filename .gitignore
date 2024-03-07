@@ -10,3 +10,4 @@ dist
 build
 v.*
 dev
+.DS_Store
